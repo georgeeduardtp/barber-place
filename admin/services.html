@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Servicios - Panel de Administración</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <!-- CSS -->
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/header.css">
+    <link rel="stylesheet" href="../css/admin-panel.css">
+    <link rel="stylesheet" href="../css/notification.css">
+    <link rel="stylesheet" href="../css/admin/services-management.css">
+</head>
+<body>
+    <div class="loader-container">
+        <div class="loader"></div>
+    </div>
+
+    <header>
+        <nav>
+            <div class="logo">
+                <a href="../index.html">
+                    <img src="../img/logoNav.jpeg" alt="Barber Place">
+                </a>
+            </div>
+            <div class="user-menu">
+                <div class="user-info">
+                    <div class="user-avatar">U</div>
+                    <div class="user-details">
+                        <span class="user-name">Usuario</span>
+                        <span class="user-role">Administrador</span>
+                    </div>
+                </div>
+                <div class="dropdown-content">
+                    <div class="dropdown-content-inner">
+                        <button id="settingsBtn">Configuración</button>
+                        <button id="logoutBtn">Cerrar Sesión</button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="admin-layout">
+        <aside class="admin-sidebar">
+            <nav class="admin-nav">
+                <a href="dashboard.html">
+                    <i class="fas fa-chart-line"></i>
+                    Dashboard
+                </a>
+                <a href="reservas.html">
+                    <i class="fas fa-calendar-alt"></i>
+                    Reservas
+                </a>
+                <a href="services.html" class="active">
+                    <i class="fas fa-cut"></i>
+                    Servicios
+                </a>
+                <a href="schedule.html">
+                    <i class="fas fa-clock"></i>
+                    Horarios
+                </a>
+                <a href="profile.html">
+                    <i class="fas fa-user"></i>
+                    Perfil
+                </a>
+            </nav>
+        </aside>
+
+        <main class="admin-main">
+            <div class="services-container">
+                <div class="services-header">
+                    <h1>Gestión de Servicios</h1>
+                    <button class="add-service-btn" onclick="showServiceModal()">
+                        <i class="fas fa-plus"></i>
+                        Nuevo Servicio
+                    </button>
+                </div>
+
+                <div id="servicesList">
+                    <!-- Los servicios se cargarán dinámicamente -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="../js/globals.js"></script>
+    <script src="../js/utils/ui-utils.js"></script>
+    <script src="../js/utils/validation-utils.js"></script>
+    <script src="../js/utils/notification-utils.js"></script>
+    <script src="../js/auth/auth.js"></script>
+    <script src="../js/admin/services-management.js"></script>
+    <script>
+        // Verificar autenticación
+        auth.onAuthStateChanged(async (user) => {
+            if (!user) {
+                window.location.href = '../index.html';
+                return;
+            }
+
+            // Verificar rol de administrador
+            const userDoc = await db.collection('users').doc(user.uid).get();
+            const userData = userDoc.data();
+            
+            if (userData.role !== APP_CONFIG.USER_ROLES.SALON) {
+                window.location.href = '../index.html';
+                return;
+            }
+
+            // Cargar servicios
+            loadServices(user.uid);
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barber Place</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/jpeg" href="img/logo.jpeg">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/header.css">
+    <link rel="stylesheet" href="css/salon-panel.css">
+    <link rel="stylesheet" href="css/admin-panel.css">
+    <link rel="stylesheet" href="css/notification.css">
+</head>
+<body>
+    <div class="loader-container">
+        <div class="loader"></div>
+    </div>
+    <header>
+        <nav>
+            <div class="logo">
+                <a href="index.html">
+                    <img src="img/logoNav.jpeg" alt="Barber Place">
+                </a>
+            </div>
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Buscar peluquerías..." autocomplete="off">
+                <button onclick="searchSalons()">Buscar</button>
+                <div id="searchResults" class="search-results"></div>
+            </div>
+            <div class="auth-buttons">
+                <button id="loginBtn"><i class="fas fa-user"></i> Iniciar Sesión</button>
+            </div>
+            <!-- Nuevo menú de usuario (inicialmente oculto) -->
+            <div class="user-menu" style="display: none;">
+                <div class="user-info">
+                    <div class="user-avatar">U</div>
+                    <div class="user-details">
+                        <span class="user-name">Usuario</span>
+                        <span class="user-role">Rol</span>
+                    </div>
+                </div>
+                <div class="dropdown-content">
+                    <div class="dropdown-content-inner">
+                        <button id="settingsBtn">Configuración</button>
+                        <button id="logoutBtn">Cerrar Sesión</button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="featured-section">
+            <h2>Peluquerías Destacadas</h2>
+            <div class="featured-salons" id="featuredSalons">
+                <!-- Aquí se cargarán dinámicamente las peluquerías destacadas -->
+            </div>
+        </section>
+
+        <section class="categories-section">
+            <h2>Servicios</h2>
+            <div class="categories">
+                <div class="category">
+                    <button class="close-btn"><i class="fas fa-times"></i></button>
+                    Corte de Cabello
+                </div>
+                <div class="category">
+                    <button class="close-btn"><i class="fas fa-times"></i></button>
+                    Tintes
+                </div>
+                <div class="category">
+                    <button class="close-btn"><i class="fas fa-times"></i></button>
+                    Barbería
+                </div>
+                <div class="category">
+                    <button class="close-btn"><i class="fas fa-times"></i></button>
+                    Peinados
+                </div>
+                <div class="category">
+                    <button class="close-btn"><i class="fas fa-times"></i></button>
+                    Tratamientos
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Marketplace Peluquerías. Todos los derechos reservados.</p>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="js/globals.js"></script>
+    <script src="js/utils/ui-utils.js"></script>
+    <script src="js/utils/notification-utils.js"></script>
+    <script src="js/utils/search-utils.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

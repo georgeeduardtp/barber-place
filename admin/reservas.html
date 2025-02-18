@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Reservas - Panel de Administración</title>
+    <link rel="stylesheet" href="../css/admin.css">
+    <link rel="stylesheet" href="../css/reservas.css">
+</head>
+<body>
+    <div class="admin-container">
+        <nav class="admin-nav">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="servicios.html">Servicios</a>
+            <a href="horarios.html">Horarios</a>
+            <a href="reservas.html" class="active">Reservas</a>
+            <a href="perfil.html">Perfil</a>
+            <button onclick="cerrarSesion()" class="logout-btn">Cerrar Sesión</button>
+        </nav>
+
+        <main class="admin-content">
+            <h1>Gestión de Reservas</h1>
+
+            <div class="filters-section">
+                <div class="filter-group">
+                    <label for="filtroFecha">Fecha:</label>
+                    <input type="date" id="filtroFecha" onchange="cargarReservas(salonId)">
+                </div>
+                <div class="filter-group">
+                    <label for="filtroEstado">Estado:</label>
+                    <select id="filtroEstado" onchange="cargarReservas(salonId)">
+                        <option value="todas">Todas</option>
+                        <option value="pendiente">Pendientes</option>
+                        <option value="confirmada">Confirmadas</option>
+                        <option value="cancelada">Canceladas</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="reservasList" class="reservas-list">
+                <!-- Las reservas se cargarán aquí dinámicamente -->
+            </div>
+
+            <div class="pagination-controls">
+                <button id="prevPage" onclick="cargarReservas(salonId, paginaActual - 1)">Anterior</button>
+                <span id="paginaActual">Página 1 de 1</span>
+                <button id="nextPage" onclick="cargarReservas(salonId, paginaActual + 1)">Siguiente</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="../js/config.js"></script>
+    <script src="../js/utils/date-utils.js"></script>
+    <script src="../js/admin/reservas-management.js"></script>
+    <script src="../js/auth.js"></script>
+    <script>
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', () => {
+            // Establecer la fecha de hoy como valor predeterminado
+            const today = new Date();
+            const formattedDate = today.toISOString().split('T')[0];
+            document.getElementById('filtroFecha').value = formattedDate;
+
+            // Verificar autenticación y cargar reservas
+            firebase.auth().onAuthStateChanged(user => {
+                if (user) {
+                    // Obtener el ID del salón del usuario actual
+                    db.collection('peluquerias')
+                        .where('userId', '==', user.uid)
+                        .get()
+                        .then(snapshot => {
+                            if (!snapshot.empty) {
+                                const salon = snapshot.docs[0];
+                                window.salonId = salon.id;
+                                cargarReservas(salonId);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error al obtener información del salón:', error);
+                        });
+                } else {
+                    window.location.href = '../login.html';
+                }
+            });
+        });
+    </script>
+</body>
+</html> 
