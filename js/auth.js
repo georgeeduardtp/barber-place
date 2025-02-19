@@ -13,10 +13,13 @@ auth.onAuthStateChanged(async user => {
                 console.log('Rol del usuario:', userData.role);
                 updateUILoggedIn(user, userData);
                 
-                if (userData.role === 'admin') {
-                    showAdminPanel();
-                } else if (userData.role === 'peluqueria') {
-                    checkAndShowSalonPanel(user.uid);
+                // Solo mostrar paneles si no estamos en la página del salón
+                if (!window.location.pathname.includes('salon.html')) {
+                    if (userData.role === 'admin') {
+                        showAdminPanel();
+                    } else if (userData.role === 'peluqueria') {
+                        checkAndShowSalonPanel(user.uid);
+                    }
                 }
             } else {
                 console.log('No se encontró información adicional del usuario');
@@ -217,12 +220,17 @@ async function filterSalons() {
                             '<p style="color: #e74c3c; font-weight: bold;"><i class="fas fa-exclamation-circle"></i> Perfil no completado</p>'
                         }
                         <div class="salon-actions">
+                            <button onclick="toggleSalonStatus('${userId}', ${isActive})" 
+                                    class="status-btn ${isActive ? 'deactivate' : 'activate'}">
+                                <i class="fas ${isActive ? 'fa-ban' : 'fa-check'}"></i>
+                                ${isActive ? 'Desactivar' : 'Activar'}
+                            </button>
                             <button onclick="showImageManager('${peluqueriaId}')" 
-                                    class="manage-images-btn" style="background-color: var(--primary-color); color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; margin-top: 10px; margin-right: 10px;">
+                                    class="manage-images-btn">
                                 <i class="fas fa-images"></i> Gestionar Imágenes
                             </button>
                             <button onclick="deleteSalonAndUser('${userId}', '${peluqueriaId || ''}')" 
-                                    class="delete-btn" style="background-color: #e74c3c; color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; margin-top: 10px;">
+                                    class="delete-btn">
                                 <i class="fas fa-trash"></i> Eliminar Peluquería
                             </button>
                         </div>
@@ -313,7 +321,8 @@ function showCreateSalonAccountModal() {
                 email: email,
                 role: 'peluqueria',
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                profileCompleted: false
+                profileCompleted: false,
+                isActive: true // Añadir campo isActive
             });
             
             document.getElementById('createSalonModal').remove();
@@ -388,21 +397,32 @@ async function loadSalonAccounts() {
             const peluqueriaData = peluqueriaSnapshot.empty ? null : peluqueriaSnapshot.docs[0].data();
             const peluqueriaId = peluqueriaSnapshot.empty ? null : peluqueriaSnapshot.docs[0].id;
 
+            const isActive = userData.isActive !== false; // Cambiar a nuevo campo
+
             html += `
-                <div class="salon-item">
+                <div class="salon-item ${isActive ? 'active' : 'inactive'}">
                     <p><strong>${userData.name}</strong></p>
                     <p>${userData.email}</p>
+                    <p class="status-badge ${isActive ? 'active' : 'inactive'}">
+                        <i class="fas ${isActive ? 'fa-check-circle' : 'fa-times-circle'}"></i>
+                        ${isActive ? 'Activo' : 'Inactivo'}
+                    </p>
                     ${peluqueriaData ? 
                         `<p style="color: #2ecc71; font-weight: bold;"><i class="fas fa-check-circle"></i> Perfil completado</p>` : 
                         '<p style="color: #e74c3c; font-weight: bold;"><i class="fas fa-exclamation-circle"></i> Perfil no completado</p>'
                     }
                     <div class="salon-actions">
+                        <button onclick="toggleSalonStatus('${userId}', ${isActive})" 
+                                class="status-btn ${isActive ? 'deactivate' : 'activate'}">
+                            <i class="fas ${isActive ? 'fa-ban' : 'fa-check'}"></i>
+                            ${isActive ? 'Desactivar' : 'Activar'}
+                        </button>
                         <button onclick="showImageManager('${peluqueriaId}')" 
-                                class="manage-images-btn" style="background-color: var(--primary-color); color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; margin-top: 10px; margin-right: 10px;">
+                                class="manage-images-btn">
                             <i class="fas fa-images"></i> Gestionar Imágenes
                         </button>
                         <button onclick="deleteSalonAndUser('${userId}', '${peluqueriaId || ''}')" 
-                                class="delete-btn" style="background-color: #e74c3c; color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; margin-top: 10px;">
+                                class="delete-btn">
                             <i class="fas fa-trash"></i> Eliminar Peluquería
                         </button>
                     </div>
@@ -476,18 +496,18 @@ function showLoginModal() {
                 </div>
                 <form id="loginForm">
                     <div class="form-group">
-                        <label for="loginEmail">
+                        <label for="email">
                             <i class="fas fa-envelope"></i>
                             Correo electrónico
                         </label>
-                        <input type="email" id="loginEmail" placeholder="Tu correo electrónico" required>
+                        <input type="email" id="email" placeholder="Tu correo electrónico" required>
                     </div>
                     <div class="form-group">
-                        <label for="loginPassword">
+                        <label for="password">
                             <i class="fas fa-lock"></i>
                             Contraseña
                         </label>
-                        <input type="password" id="loginPassword" placeholder="Tu contraseña" required>
+                        <input type="password" id="password" placeholder="Tu contraseña" required>
                     </div>
                     <button type="submit" class="submit-button">
                         <i class="fas fa-sign-in-alt"></i>
@@ -499,31 +519,31 @@ function showLoginModal() {
     `;
     document.body.insertAdjacentHTML('beforeend', modal);
     
-    // Agregar event listener al formulario
+    // Event listener para el formulario
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const submitButton = e.target.querySelector('button[type="submit"]');
-        const email = document.getElementById('loginEmail').value;
-        const password = document.getElementById('loginPassword').value;
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
         
         try {
             submitButton.disabled = true;
             submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Iniciando sesión...';
             
-            await auth.signInWithEmailAndPassword(email, password);
+            await signIn(email, password);
             document.getElementById('loginModal').remove();
         } catch (error) {
             submitButton.disabled = false;
             submitButton.innerHTML = '<i class="fas fa-sign-in-alt"></i> Iniciar Sesión';
             
             let errorMessage = 'Error al iniciar sesión';
-            if (error.code === 'auth/user-not-found') {
-                showErrorMessage('Usuario no encontrado');
-            } else if (error.code === 'auth/wrong-password') {
-                showErrorMessage('Contraseña incorrecta');
+            if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+                errorMessage = 'Correo electrónico o contraseña incorrectos';
+            } else if (error.message.includes('inactiva')) {
+                errorMessage = error.message;
             }
             
-            alert(errorMessage);
+            showErrorMessage(errorMessage);
         }
     });
 }
@@ -554,21 +574,59 @@ function updateUILoggedIn(user, userData) {
     if (userData.role === 'peluqueria') roleText = 'Peluquería';
     userRole.textContent = roleText;
     
-    // Configurar botones del menú desplegable
+    // Obtener el contenedor del menú desplegable
+    const dropdownInner = userMenu.querySelector('.dropdown-content-inner');
+    
+    // Limpiar el contenido existente
+    dropdownInner.innerHTML = '';
+    
+    // Añadir botones según el rol
+    if (userData.role === 'admin') {
+        dropdownInner.innerHTML = `
+            <button id="settingsBtn">
+                <i class="fas fa-cog"></i> Panel Principal
+            </button>
+            <button id="statsBtn">
+                <i class="fas fa-chart-bar"></i> Estadísticas
+            </button>
+            <button id="logoutBtn">
+                <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+            </button>
+        `;
+    } else {
+        dropdownInner.innerHTML = `
+            <button id="settingsBtn">
+                <i class="fas fa-cog"></i> Configuración
+            </button>
+            <button id="logoutBtn">
+                <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+            </button>
+        `;
+    }
+    
+    // Configurar event listeners
     const logoutBtn = document.getElementById('logoutBtn');
     const settingsBtn = document.getElementById('settingsBtn');
+    const statsBtn = document.getElementById('statsBtn');
     
     logoutBtn.addEventListener('click', () => {
         auth.signOut();
     });
 
-    settingsBtn.addEventListener('click', () => {
-        if (userData.role === 'admin' || userData.role === 'peluqueria') {
-            // Asegurar que el panel estará desplegado
-            localStorage.setItem('panelMinimized', 'false');
-            window.location.href = 'index.html';
-        }
-    });
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', () => {
+            if (userData.role === 'admin' || userData.role === 'peluqueria') {
+                localStorage.setItem('panelMinimized', 'false');
+                window.location.href = 'index.html';
+            }
+        });
+    }
+
+    if (statsBtn) {
+        statsBtn.addEventListener('click', () => {
+            window.location.href = 'admin/stats.html';
+        });
+    }
 }
 
 // Función para actualizar la UI cuando el usuario no está logueado
@@ -1845,4 +1903,82 @@ async function saveImageChanges(peluqueriaId) {
         confirmBtn.disabled = false;
         confirmBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Cambios';
     }
-} 
+}
+
+// Función para cambiar el estado de una peluquería
+async function toggleSalonStatus(userId, currentStatus) {
+    const confirmMessage = currentStatus ? 
+        '¿Estás seguro de que deseas desactivar esta peluquería? Esto impedirá su acceso al sistema.' :
+        '¿Estás seguro de que deseas reactivar esta peluquería? Esto restaurará su acceso al sistema.';
+
+    if (!confirm(confirmMessage)) return;
+
+    try {
+        await db.collection('users').doc(userId).update({
+            isActive: !currentStatus // Usar nuevo campo isActive
+        });
+
+        showSuccessMessage(currentStatus ? 'Peluquería desactivada correctamente' : 'Peluquería activada correctamente');
+        loadSalonAccounts(); // Recargar la lista
+    } catch (error) {
+        console.error('Error al cambiar el estado de la peluquería:', error);
+        showErrorMessage('Error al cambiar el estado de la peluquería');
+    }
+}
+
+// Función para iniciar sesión
+async function signIn(email, password) {
+    try {
+        // Primero intentar el inicio de sesión
+        const userCredential = await auth.signInWithEmailAndPassword(email, password);
+        
+        // Si el inicio de sesión es exitoso, verificar el rol y estado
+        const userDoc = await db.collection('users').doc(userCredential.user.uid).get();
+        
+        if (userDoc.exists) {
+            const userData = userDoc.data();
+            
+            // Solo verificar isActive para peluquerías
+            if (userData.role === 'peluqueria' && userData.isActive === false) {
+                await auth.signOut(); // Cerrar sesión si está inactiva
+                throw new Error('Tu cuenta está inactiva por falta de pago. Por favor, contacta con el administrador.');
+            }
+            
+            return userCredential;
+        }
+        
+        return userCredential;
+    } catch (error) {
+        if (error.message.includes('inactiva')) {
+            throw error;
+        }
+        throw error;
+    }
+}
+
+// Manejar el formulario de inicio de sesión
+document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const submitButton = e.target.querySelector('button[type="submit"]');
+
+    try {
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Iniciando sesión...';
+        
+        await signIn(email, password);
+    } catch (error) {
+        submitButton.disabled = false;
+        submitButton.innerHTML = 'Iniciar Sesión';
+        
+        let errorMessage = 'Error al iniciar sesión';
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+            errorMessage = 'Correo electrónico o contraseña incorrectos';
+        } else if (error.message.includes('inactiva')) {
+            errorMessage = error.message;
+        }
+        
+        showErrorMessage(errorMessage);
+    }
+});

@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Estadísticas - Barber Place</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/jpeg" href="../img/logo.jpeg">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <!-- CSS -->
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/header.css">
+    <link rel="stylesheet" href="../css/admin-panel.css">
+    <link rel="stylesheet" href="../css/notification.css">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <nav>
+            <div class="logo">
+                <a href="../index.html">
+                    <img src="../img/logo.jpeg" alt="Barber Place Logo">
+                </a>
+            </div>
+            
+            <!-- Menú de usuario (se muestra cuando está logueado) -->
+            <div class="user-menu" style="display: none;">
+                <div class="user-info">
+                    <div class="user-avatar">A</div>
+                    <div class="user-details">
+                        <span class="user-name">Usuario</span>
+                        <span class="user-role">Rol</span>
+                    </div>
+                </div>
+                <div class="dropdown-content">
+                    <div class="dropdown-content-inner">
+                        <button id="settingsBtn">
+                            <i class="fas fa-cog"></i> Panel Principal
+                        </button>
+                        <button id="logoutBtn">
+                            <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <div class="dashboard-container">
+            <div class="dashboard-section">
+                <h2><i class="fas fa-chart-bar"></i> Estadísticas Generales</h2>
+                <div class="price-control">
+                    <label for="monthlyPrice">Precio Mensualidad:</label>
+                    <div class="price-input-group">
+                        <input type="number" id="monthlyPrice" min="0" step="1">
+                        <span class="currency-symbol">€</span>
+                        <button id="savePrice" class="save-price-btn">
+                            <i class="fas fa-save"></i> Guardar
+                        </button>
+                    </div>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <i class="fas fa-store"></i>
+                        <div class="stat-value" id="totalSalons">0</div>
+                        <div class="stat-label">Peluquerías Activas</div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-euro-sign"></i>
+                        <div class="stat-value" id="monthlyIncome">0€</div>
+                        <div class="stat-label">Ingresos Mensuales Estimados</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="dashboard-section">
+                <h2><i class="fas fa-chart-line"></i> Evolución de Ingresos</h2>
+                <div class="chart-controls">
+                    <select id="viewSelector" class="view-selector">
+                        <option value="daily">Vista Diaria (últimos 30 días)</option>
+                        <option value="monthly">Vista Mensual (últimos 6 meses)</option>
+                    </select>
+                </div>
+                <div class="chart-container">
+                    <canvas id="incomeChart"></canvas>
+                </div>
+            </div>
+
+            <div class="dashboard-section">
+                <h2><i class="fas fa-history"></i> Registro Histórico</h2>
+                <div class="stats-table-container">
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Peluquerías Activas</th>
+                                <th>Precio Mensual</th>
+                                <th>Ingresos Totales</th>
+                            </tr>
+                        </thead>
+                        <tbody id="statsTableBody">
+                            <!-- Los datos se cargarán dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Nueva sección de Administración de Pagos -->
+        <div class="dashboard-section payments-section">
+            <h2><i class="fas fa-money-bill-wave"></i> Administración de Pagos</h2>
+            
+            <!-- Grid de tarjetas de peluquerías -->
+            <div class="salons-payment-grid" id="salonsPaymentGrid">
+                <!-- Las tarjetas se cargarán dinámicamente -->
+            </div>
+
+            <!-- Modal para registrar pago -->
+            <div id="paymentModal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Registrar Nuevo Pago</h3>
+                        <button class="close-modal">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="paymentDate">Fecha de Pago:</label>
+                            <input type="date" id="paymentDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="paymentAmount">Cantidad (€):</label>
+                            <input type="number" id="paymentAmount" min="0" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="paymentMethod">Método de Pago:</label>
+                            <select id="paymentMethod" required>
+                                <option value="transferencia">Transferencia Bancaria</option>
+                                <option value="efectivo">Efectivo</option>
+                                <option value="tarjeta">Tarjeta</option>
+                                <option value="otro">Otro</option>
+                            </select>
+                        </div>
+                        <input type="hidden" id="currentSalonId">
+                        <button id="addPaymentBtn" class="primary-button">
+                            <i class="fas fa-plus"></i> Registrar Pago
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal para historial de pagos -->
+            <div id="historyModal" class="modal" style="display: none;">
+                <div class="modal-content payment-history-modal">
+                    <div class="modal-header">
+                        <div class="modal-header-content">
+                            <i class="fas fa-history"></i>
+                            <div class="modal-title">
+                                <h3>Historial de Pagos</h3>
+                                <p class="salon-name-display"></p>
+                            </div>
+                        </div>
+                        <button class="close-modal">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="payment-summary">
+                            <div class="summary-card">
+                                <i class="fas fa-euro-sign"></i>
+                                <div class="summary-content">
+                                    <span class="summary-value" id="totalAmount">0€</span>
+                                    <span class="summary-label">Total Pagado</span>
+                                </div>
+                            </div>
+                            <div class="summary-card">
+                                <i class="fas fa-calendar-check"></i>
+                                <div class="summary-content">
+                                    <span class="summary-value" id="totalPayments">0</span>
+                                    <span class="summary-label">Pagos Realizados</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="payment-filters">
+                            <div class="filter-group">
+                                <label for="monthFilter">
+                                    <i class="fas fa-calendar-alt"></i> Filtrar por Mes
+                                </label>
+                                <input type="month" id="monthFilter" class="styled-input">
+                            </div>
+                        </div>
+
+                        <div class="payment-table-container">
+                            <table class="payment-table">
+                                <thead>
+                                    <tr>
+                                        <th><i class="fas fa-calendar"></i> Fecha</th>
+                                        <th><i class="fas fa-euro-sign"></i> Cantidad</th>
+                                        <th><i class="fas fa-money-bill-wave"></i> Método</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="paymentTableBody">
+                                    <!-- Los pagos se cargarán dinámicamente -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <!-- Primero cargar la configuración de Firebase -->
+    <script src="../js/firebase-config.js"></script>
+    
+    <!-- Chart.js para los gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Script específico para la página de estadísticas -->
+    <script>
+    // Función para actualizar la UI cuando el usuario está logueado
+    function updateUILoggedIn(user, userData) {
+        const userMenu = document.querySelector('.user-menu');
+        const userAvatar = userMenu.querySelector('.user-avatar');
+        const userName = userMenu.querySelector('.user-name');
+        const userRole = userMenu.querySelector('.user-role');
+        
+        // Mostrar menú de usuario
+        userMenu.style.display = 'flex';
+        
+        // Actualizar avatar con la primera letra del email
+        userAvatar.textContent = user.email.charAt(0).toUpperCase();
+        
+        // Actualizar nombre y rol
+        userName.textContent = userData.name || user.email;
+        userRole.textContent = userData.role === 'admin' ? 'Administrador' : 
+                             userData.role === 'peluqueria' ? 'Peluquería' : 'Cliente';
+
+        // Configurar botones
+        const logoutBtn = document.getElementById('logoutBtn');
+        const settingsBtn = document.getElementById('settingsBtn');
+        
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                auth.signOut().then(() => {
+                    window.location.href = '../index.html';
+                });
+            });
+        }
+
+        if (settingsBtn) {
+            settingsBtn.addEventListener('click', () => {
+                window.location.href = '../index.html';
+            });
+        }
+    }
+
+    // Función para actualizar la UI cuando el usuario no está logueado
+    function updateUILoggedOut() {
+        window.location.href = '../index.html';
+    }
+    </script>
+
+    <!-- Luego los scripts que dependen de Firebase -->
+    <script src="../js/auth/auth-state.js"></script>
+    <script src="../js/admin/stats.js"></script>
+    <script src="../js/admin/payments.js"></script>
+</body>
+</html> 
