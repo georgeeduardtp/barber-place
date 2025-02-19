@@ -1,4 +1,4 @@
-https://georgeeduardtp.github.io/barber-place/index.html
+https://georgeeduardtp.github.io/barber-place/
 
 
 🔥 Estructura del Marketplace (Usando Firebase y Sin Pago Online)
